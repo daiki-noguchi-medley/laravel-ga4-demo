@@ -115,6 +115,42 @@ open http://localhost:8000
 @include('partials.ga4', ['spa' => true]) {{-- SPA: 自動送信OFF + 手動送信 --}}
 ```
 
+### 設定の読み出し(`.env` → `config`)
+
+測定IDは `.env` に置き、`config/services.php` 経由で読み出します。
+
+```bash
+# .env（環境ごとに変える値。Git 管理しない）
+GA4_MEASUREMENT_ID=G-XXXXXXXXXX
+```
+
+```php
+// config/services.php
+'ga4' => [
+    'id' => env('GA4_MEASUREMENT_ID'),
+],
+```
+
+```php
+// 参照は config() 経由（Blade / ミドルウェアなど）
+config('services.ga4.id');
+```
+
+> **なぜ Blade で `env()` を直接呼ばないか**: 本番で `php artisan config:cache` すると、**config ファイル以外での `env()` は `null` を返す**ようになります。値は必ず `config()` 経由で参照するのが Laravel の定石です。
+
+React/Inertia 側から測定IDを使いたい場合は、`HandleInertiaRequests::share()` で共有できます。
+
+```php
+// app/Http/Middleware/HandleInertiaRequests.php
+public function share(Request $request): array
+{
+    return [
+        ...parent::share($request),
+        'ga4Id' => config('services.ga4.id'),
+    ];
+}
+```
+
 ### 中核: `resources/views/partials/ga4.blade.php`
 
 測定ID未設定なら何も出力せず、`$spa` で自動/手動送信を切り替え、本番以外は `debug_mode` を付けて DebugView に流す——これを1ファイルで制御しています。
