@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # ホストの .env をそのまま使う。GA4_MEASUREMENT_ID を編集してブラウザを再読込すれば
+      # 再ビルド不要で反映される(config はキャッシュしていないため)。
+      - ./.env:/var/www/.env
